@@ -35,7 +35,7 @@ Making substitutions for whichever program you wish to compile. Example files ca
 
 - if the option is missing, the template will be read from ~STDIN~.
 - the context can be provided from ~STDIN~ using ~-c -~ .
-- context can be provided from the command line using ~-C "{:foo \"bar\"}"~.
+- context can be provided from the command line using ~-C "{:foo \\"bar\\"}"~.
 - if the context file cannot be read, the default context can be specified with ~-d~.
 - if no output is provided it will print to ~STDOUT~.
 - custom Selmer tags can be provided in a Clojure file, ~-a <file>~.
