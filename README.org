@@ -1,0 +1,106 @@
+* æ/Isogeny
+
+Built around Yogthos's [[https://github.com/yogthos/Selmer][Selmer]], Isogeny is named for the [[https://en.wikipedia.org/wiki/Selmer_group][Selmer group]], '/constructed from an [[https://en.wikipedia.org/wiki/Isogeny][isogeny]] of [[https://en.wikipedia.org/wiki/Abelian_variety][abelian varieties]]/'.
+
+It is easy to do machine-specific configuration for programs like Emacs whose configuration files are written in Turing-complete languages. The same cannot be said for the multitude of programs whose configuration is written in simple data formats: /toml/[fn:toml], /json/, /yaml/, and many others.
+
+/Isogeny/ allows you to make all configuration dynamic.
+
+** Usage
+
+Isogeny takes a template, an EDN context file, and generates an output file.
+
+#+begin_src sh
+isogeny.clj -t TEMPLATE -c CONTEXT -o OUTPUT
+#+end_src
+
+Replace all varying values in a configuration file with ~{{ variable }}~, in what will become the template. Move the value to an EDN file like ~{:variable value}~. Point the output to the location of the original file.
+
+*** Calling Isogeny
+
+Isogeny is written to be called on startup by the login shell.
+
+In ~~/.profile~, ~~/.bash_profile~, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
+
+#+begin_src sh
+isogeny.clj -t ~/.config/example/exp.template.conf \
+    -c ~/.config/example/exp.$HOSTNAME.edn \
+    -d ~/.config/example/exp.default.edn \
+    -o ~/.config/example/exp.conf
+#+end_src
+
+Making substitutions for whichever program you wish to compile. Example files can be tried from the [[file:examples/]] directory.
+
+*** Options
+
+- if the option is missing, the template will be read from ~STDIN~.
+- the context can be provided from ~STDIN~ using ~-c -~ .
+- context can be provided from the command line using ~-C '{:foo "bar"}'~ .
+- if the context file cannot be read, the default context can be specified with ~-d~.
+- if no output is provided it will print to ~STDOUT~.
+- custom Selmer tags can be provided in a Clojure file, ~-a <file>~.
+- if you wish to throw an exception when context is missing a value in the template, use ~--strict~.
+- the program can give more verbose output, ~-v~, or print ~--help~.
+
+*** ~HOSTNAME~ or ~HOST~?
+
+~HOSTNAME~ is a variable available in Bash, whilst ~HOST~ is available in Zsh; if you find that one is empty, try the other.
+
+*** ~PATH~?
+
+If you are having trouble running ~isogeny.clj~, check that your ~PATH~ is being set before Isogeny is called, otherwise provide a fully-qualified path, ~/usr/bin/isogen/usr/bin/isogeny~.
+
+** Creating a Selmer template
+
+Isogeny uses Selmer to render templates. See the [[https://github.com/yogthos/Selmer][Selmer repo]] for comprehensive documentation.
+
+Selmer uses ~{{ foo }}~ to substitute variables, and ~{% bar %}~ for tags, used like ~{% tag arg-1 arg-2 %}~:
+
+- ~include~
+- ~block~
+- ~cycle~
+- ~debug~
+- ~extends~
+- ~if~ / ~else~ / ~endif~
+- ~ifequal~
+- ~ifunequal~
+- ~for~ / ~endfor~
+- ~sum~
+- ~now~
+- ~comment~
+- ~firstof~
+- ~safe~
+- ~script~
+- ~style~
+- ~verbatim~
+- ~with~
+
+** Environment variables
+
+Isogeny supports two means of using environment variables, putting them in the template or the EDN file.
+
+Isogeny has a custom ~env~ tag for its templates:
+#+begin_src
+{% env "PATH" %}
+#+end_src
+
+Environment variables can also be read when the EDN is evaluated:
+#+begin_src clojure
+{:path (System/getenv "PATH")}
+;; then used as {{ path }} in the template
+#+end_src
+
+** Custom tags
+
+Users may supply additional tags can be supplied in a Clojure file with the ~-a --add-tags <file>~ option.
+
+#+begin_src clojure
+(selmer.parser/add-tag!
+ :custom
+ (fn [args context-map]
+   (str "Custom tag replacement of: " (first args))))
+;; {% custom foo %} => "Custom tag replacement of: foo"
+#+end_src
+
+* Footnotes
+[fn:toml] [[https://en.wikipedia.org/wiki/TOML][TOML]]

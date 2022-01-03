@@ -1,0 +1,6 @@
+Specific configuration: false
+Environment variable: ae
+EDN environment variable: /usr/local/sbin:/usr/local/bin:/usr/bin:/home/ae/.scripts:/home/ae/.config/emacs/bin:/home/ae/bin:/home/ae/src/go/bin:/home/ae/.dotnet/tools:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+Missing: 
+Custom tag active?: true
+Override: true

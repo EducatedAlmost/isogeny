@@ -1,0 +1,2 @@
+{:path (System/getenv "PATH")
+ :specific? true}
