@@ -2,7 +2,7 @@
 
 Built around Yogthos's [[https://github.com/yogthos/Selmer][Selmer]], Isogeny is named for the [[https://en.wikipedia.org/wiki/Selmer_group][Selmer group]], '/constructed from an [[https://en.wikipedia.org/wiki/Isogeny][isogeny]] of [[https://en.wikipedia.org/wiki/Abelian_variety][abelian varieties]]/'.
 
-It is easy to do machine-specific configuration for programs like Emacs whose configuration files are written in Turing-complete languages. The same cannot be said for the multitude of programs whose configuration is written in simple data formats: /toml/[fn:toml], /json/, /yaml/, and many others.
+It is easy to do machine-specific configuration for programs like Emacs whose configuration files are written in Turing-complete languages. The same cannot be said for the multitude of programs whose configuration is written in simple data formats: /toml/ [fn:toml], /json/, /yaml/, and many others.
 
 /Isogeny/ allows you to make all configuration dynamic.
 
@@ -20,7 +20,7 @@ Replace all varying values in a configuration file with ~{{ variable }}~, in wha
 
 Isogeny is written to be called on startup by the login shell.
 
-In ~~/.profile~, ~~/.bash_profile~, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
+In =~/.profile=, =~/.bash_profile=, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
 
 #+begin_src sh
 isogeny.clj -t ~/.config/example/exp.template.conf \
@@ -35,7 +35,7 @@ Making substitutions for whichever program you wish to compile. Example files ca
 
 - if the option is missing, the template will be read from ~STDIN~.
 - the context can be provided from ~STDIN~ using ~-c -~ .
-- context can be provided from the command line using ~-C '{:foo "bar"}'~ .
+- context can be provided from the command line using =-C '{:foo "bar"}'=.
 - if the context file cannot be read, the default context can be specified with ~-d~.
 - if no output is provided it will print to ~STDOUT~.
 - custom Selmer tags can be provided in a Clojure file, ~-a <file>~.
@@ -102,5 +102,4 @@ Users may supply additional tags can be supplied in a Clojure file with the ~-a 
 ;; {% custom foo %} => "Custom tag replacement of: foo"
 #+end_src
 
-* Footnotes
 [fn:toml] [[https://en.wikipedia.org/wiki/TOML][TOML]]
