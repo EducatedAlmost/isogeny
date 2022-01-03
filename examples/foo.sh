@@ -7,4 +7,4 @@
     -a examples/custom-tag.clj \
     -o examples/foo.out \
     --strict \
-    -v
+    --verbose

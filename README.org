@@ -8,19 +8,52 @@ It is easy to do machine-specific configuration for programs like Emacs whose co
 
 ** Usage
 
-Isogeny takes a template, an EDN context file, and generates an output file.
+Isogeny takes a template, an [[https://github.com/edn-format/edn][EDN]] context file, and generates an output file.
 
 #+begin_src sh
 isogeny.clj -t TEMPLATE -c CONTEXT -o OUTPUT
 #+end_src
 
-Replace all varying values in a configuration file with ~{{ variable }}~, in what will become the template. Move the value to an EDN file like ~{:variable value}~. Point the output to the location of the original file.
+Replace all varying values in a configuration file with ~{{ variable }}~, in what will become the template. Move the value to the context file, ~{:variable value}~. Point the output to the location of the original file. The context will be different for each machine or user profile.
+
+Template:
+#+begin_src
+...
+Font size: {{ font.size }}
+Font family: {{ font.family }}
+Hosts: {% for host in hosts %}
+  Host: {{ host }} {% endfor %}
+...
+#+end_src
+
+Context:
+#+begin_src clojure
+{:font {:size 12
+        :family "Fira mono"}
+ :hosts ["127.0.0.1" "localhost"]}
+#+end_src
+
+Output:
+#+begin_src
+...
+Font size: 12
+Font family: Fira mono
+Hosts:
+  Host: 127.0.0.1
+  Host: localhost
+...
+#+end_src
+
+For another machine the context might have a different font size, and another host. The correct context file can be picked automatically if their names are parameterised with environment variables, such as:
+
+#+begin_src
+i3wm.$HOSTNAME.edn     ; => i3wm.hermes.edn
+vim.$(uname).$USER.edn ; => vim.Darwin.simon.edn
+#+end_src
 
 *** Calling Isogeny
 
-Isogeny is written to be called on startup by the login shell.
-
-In =~/.profile=, =~/.bash_profile=, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
+Isogeny is designed to be called on startup by the login shell. In =~/.profile=, =~/.bash_profile=, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
 
 #+begin_src sh
 isogeny.clj -t ~/.config/example/exp.template.conf \
@@ -41,7 +74,7 @@ Making substitutions for whichever program you wish to compile. Example files ca
     -a examples/custom-tag.clj \
     -o examples/foo.out \
     --strict \
-    -v
+    --verbose
 #+end_src
 
 It should throw an exception because there is a missing tag. Try removing ~--strict~ to suppress the exception, and removing the output option to output to ~STDOUT~.
