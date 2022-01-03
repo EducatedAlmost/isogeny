@@ -29,7 +29,22 @@ isogeny.clj -t ~/.config/example/exp.template.conf \
     -o ~/.config/example/exp.conf
 #+end_src
 
-Making substitutions for whichever program you wish to compile. Example files can be tried from the [[file:examples/]] directory.
+Making substitutions for whichever program you wish to compile. Example files can be tried from the [[file:examples/]] directory. Try calling ~examples/foo.sh~:
+
+#+begin_src sh
+#!/usr/bin/env bash
+
+./isogeny.clj -t examples/foo.template \
+    -c examples/foo.specific.edn \
+    -d examples/foo.default.edn \
+    -C '{:override? true}' \
+    -a examples/custom-tag.clj \
+    -o examples/foo.out \
+    --strict \
+    -v
+#+end_src
+
+It should throw an exception because there is a missing tag. Try removing ~--strict~ to suppress the exception, and removing the output option to output to ~STDOUT~.
 
 *** Options
 

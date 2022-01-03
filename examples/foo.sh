@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-isogeny.clj -t foo.template \
-    -c foo.specific.edn \
-    -d foo.default.edn \
-    -C '{}'
-    -a custom-tag.clj \
-    -o foo.out \
+./isogeny.clj -t examples/foo.template \
+    -c examples/foo.specific.edn \
+    -d examples/foo.default.edn \
+    -C '{:override? true}' \
+    -a examples/custom-tag.clj \
+    -o examples/foo.out \
     --strict \
     -v
