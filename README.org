@@ -98,7 +98,7 @@ It should throw an exception because there is a missing tag. Try removing ~--str
 
 If you are having trouble running ~isogeny.clj~, check that your ~PATH~ is being set before Isogeny is called, otherwise provide a fully-qualified path, ~/usr/bin/isogen/usr/bin/isogeny~.
 
-** Creating a Selmer template
+** Creating a template
 
 Isogeny uses Selmer to render templates. See the [[https://github.com/yogthos/Selmer][Selmer repo]] for comprehensive documentation.
 
@@ -123,7 +123,7 @@ Selmer uses ~{{ foo }}~ to substitute variables, and ~{% bar %}~ for tags, used 
 - ~verbatim~
 - ~with~
 
-** Environment variables
+*** Environment variables
 
 Isogeny supports two means of using environment variables, putting them in the template or the EDN file.
 
@@ -138,7 +138,7 @@ Environment variables can also be read when the EDN is evaluated:
 ;; then used as {{ path }} in the template
 #+end_src
 
-** Custom tags
+*** Custom tags
 
 Users may supply additional tags can be supplied in a Clojure file with the ~-a --add-tags <file>~ option.
 
