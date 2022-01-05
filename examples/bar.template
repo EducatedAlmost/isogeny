@@ -1,0 +1,6 @@
+Bar configuration: {{ bar }}
+Environment variable: {% env USER %}
+EDN environment variable: {{ path }}
+Missing: {{ missing }}
+Custom tag active?: {% custom %}
+Override: {{ override? }}

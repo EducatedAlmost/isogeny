@@ -1,3 +1,4 @@
 {:path (System/getenv "PATH")
  :specific? true
- :override? false}
+ :override? false
+ :bar true}

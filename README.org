@@ -79,6 +79,22 @@ Making substitutions for whichever program you wish to compile. Example files ca
 
 It should throw an exception because there is a missing tag. Try removing ~--strict~ to suppress the exception, and removing the output option to output to ~STDOUT~.
 
+**** Multi-template mode
+
+Alternatively, Isogeny can render multiple templates at once in the same context using the ~-T~ flag and passing the templates as arguments. The name of the output of each template will automatically be calculated by removing its extension.
+
+#+begin_src
+./isogeny.clj -T \
+    -c examples/foo.specific.edn \
+    -d examples/foo.default.edn \
+    -C '{:override? true}' \
+    -a examples/custom-tag.clj \
+    --verbose \
+    examples/foo.template examples/bar.template
+#+end_src
+
+This produces the output files ~examples/foo~ and ~examples/bar~. Note that only a single context is used, so it must contain all the values to fill every template.
+
 *** Options
 
 - if the option is missing, the template will be read from ~STDIN~.

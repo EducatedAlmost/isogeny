@@ -2,21 +2,23 @@
 ;; -*- mode: clojure -*-
 
 (ns ae.isogeny
-  (:require [clojure.pprint :as pp]
+  (:require [babashka.fs :as fs]
+            [clojure.pprint :as pp]
             [clojure.tools.cli :as cli]
             [clojure.tools.logging :as log]
             [selmer.parser :as s.parser]
             [selmer.util :as s.util]))
 
-(def help-explanation
+(def usage
   "USAGE: isogeny -t TEMPLATE -c CONTEXT -o OUTPUT
 TEMPLATE: Selmer template
 CONTEXT: EDN context map
 OUTPUT: output location")
 
 (def cli-options
-  [["-t" "--template TEMPLATE" "Template" :default *in*]
-   ["-c" "--context CONTEXT" "EDN context" :default *in*]
+  [["-t" "--template TEMPLATE" "Template" :default *in* :default-desc "*in*"]
+   ["-T" "--multi-template" "Render multiple templates provided as args"]
+   ["-c" "--context CONTEXT" "EDN context" :default *in* :default-desc "*in*"]
    ["-C" "--context-string CONTEXT_STRING" "EDN context string"]
    ["-d" "--context-default CONTEXT_DEFAULT" "Default EDN context"]
    ["-o" "--output OUTPUT" "Output to file"]
@@ -96,19 +98,31 @@ OUTPUT: output location")
          (log/error "ERROR - Cannot write to: " output)
          (throw e))))
 
+(defn render-one [ctxt template output]
+  (let [tmpl (->template template)]
+    (when @*verbose?* (log/info "Known variables: " (s.parser/known-variables tmpl)))
+    (-> tmpl (render ctxt) (write output))))
+
+(defn render-many
+  [ctxt templates]
+  (->> templates
+       (map (fn [t] [t (fs/strip-ext t)]))
+       (map #(render-one ctxt (first %) (second %)))))
+
 (defn -main [args]
-  (let [{{:keys [template context context-string context-default
+  (let [{{:keys [template multi-template context context-string context-default
                  output add-tags strict? verbose? version help?]
           :as options} :options
          :keys [arguments summary errors]} (cli/parse-opts args cli-options)]
-    (when help? (println help-explanation) (println summary) (System/exit 0))
+    (when errors (log/error "Error parsing options and args:" errors))
+    (when help? (println usage) (println summary) (System/exit 0))
     (when version (println "Isogeny 2.0") (System/exit 0))
     (when strict? (throw-on-missing))
     (when verbose? (swap! *verbose?* (constantly true)) (log/info "Options: " options))
     (when add-tags (add-tags! add-tags))
-    (let [ctxt (->context context context-default context-string)
-          tmpl (->template template)]
-      (when @*verbose?* (log/info "Known variables: " (s.parser/known-variables tmpl)))
-      (-> tmpl (render ctxt) (write output)))))
+    (let [ctxt (->context context context-default context-string)]
+      (if multi-template
+        (render-many ctxt arguments)
+        (render-one ctxt template output)))))
 
 (-main *command-line-args*)
