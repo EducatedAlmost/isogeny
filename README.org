@@ -114,6 +114,26 @@ This produces the output files ~examples/foo~ and ~examples/bar~. Note that only
 
 If you are having trouble running ~isogeny.clj~, check that your ~PATH~ is being set before Isogeny is called, otherwise provide a fully-qualified path, ~/usr/bin/isogen/usr/bin/isogeny~.
 
+*** Deep-merge contexts
+
+Using a context string to override settings in the context file can sometimes overwrite settings that it shouldn't.
+
+#+begin_src clojure
+{:foo "foo" :bar {:two 2}} ; => provided in the context file
+{:bar {:three 3}} ; => provided in the context string
+{:foo "foo" :bar {:three 3}} ; => the merged context that will be used
+#+end_src
+
+As you can see, the ~(:bar :two)~ entry was lost during the merge. To prevent this the ~--deep-merge~ option can be used which recursively uses a merge when combining maps.
+
+#+begin_src clojure
+{:foo "foo" :bar {:two 2}} ; => provided in the context file
+{:bar {:three 3}} ; => provided in the context string
+{:foo "foo" :bar {:two 2 :three 3}} ; => the merged context that will be used
+#+end_src
+
+These nested values can easily be used in Selmer templates using the ~{{ bar.two }}~ syntax.
+
 ** Creating a template
 
 Isogeny uses Selmer to render templates. See the [[https://github.com/yogthos/Selmer][Selmer repo]] for comprehensive documentation.

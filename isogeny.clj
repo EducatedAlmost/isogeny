@@ -23,6 +23,7 @@ OUTPUT: output location")
    ["-d" "--context-default CONTEXT_DEFAULT" "Default EDN context"]
    ["-o" "--output OUTPUT" "Output to file"]
    ["-a" "--add-tags ADD_TAGS" "Provide a file of additional tag definitions"]
+   [nil "--deep-merge" "Recursively merge the CONTEXT and CONTEXT_STRING" :id :deep-merge?]
    ["-s" "--strict" "Missing values throw exceptions" :id :strict?]
    ["-v" "--verbose" "Verbose output" :id :verbose?]
    ["-V" "--version" "Version"]
@@ -63,14 +64,29 @@ OUTPUT: output location")
                 (log/error "Neither the context nor its default can be found:" (.getMessage e))
                 (throw e2))))))
 
+(defn deep-merge
+  "Like merge, but merges maps recursively."
+  [& maps]
+  (if (every? map? maps)
+    (apply merge-with deep-merge maps)
+    (last maps)))
+
 (defn ->context "Create the context to be used to render."
-  [context context-default context-string]
-  (when @*verbose?* (log/info "Attempting to read context: " context))
-  (let [context (if (= "-" context) *in* context)
-        context-override (some-> context-string read-string)]
-    (-> (read-context context context-default)
-        (merge context-override)
-        eval)))
+  ([context]
+   (->context context nil nil nil))
+  ([context context-default]
+   (->context context context-default nil nil))
+  ([context context-default context-string]
+   (->context context context-default context-string nil))
+  ([context context-default context-string deep-merge?]
+   (when @*verbose?* (log/info "Attempting to read context: " context)
+         (when (some? context-string) (log/info "Merging context with override:" context-string))
+         (when deep-merge? (log/info "Using deep-merge.")))
+   (let [context (if (= "-" context) *in* context)
+         context-override (some-> context-string read-string)]
+     (-> (read-context context context-default)
+         ((if deep-merge? deep-merge merge) context-override)
+         eval))))
 
 (defn ->template
   "Read the template, either from file or STDIN."
@@ -111,7 +127,7 @@ OUTPUT: output location")
 
 (defn -main [args]
   (let [{{:keys [template multi-template context context-string context-default
-                 output add-tags strict? verbose? version help?]
+                 output add-tags strict? verbose? version help? deep-merge?]
           :as options} :options
          :keys [arguments summary errors]} (cli/parse-opts args cli-options)]
     (when errors (log/error "Error parsing options and args:" errors))
@@ -120,7 +136,7 @@ OUTPUT: output location")
     (when strict? (throw-on-missing))
     (when verbose? (swap! *verbose?* (constantly true)) (log/info "Options: " options))
     (when add-tags (add-tags! add-tags))
-    (let [ctxt (->context context context-default context-string)]
+    (let [ctxt (->context context context-default context-string deep-merge?)]
       (if multi-template
         (render-many ctxt arguments)
         (render-one ctxt template output)))))
