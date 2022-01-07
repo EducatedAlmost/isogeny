@@ -1,5 +1,7 @@
 * æ/Isogeny
 
+Read the blog post: https://blog.almost.education/posts/isogeny
+
 Built around Yogthos's [[https://github.com/yogthos/Selmer][Selmer]], Isogeny is named for the [[https://en.wikipedia.org/wiki/Selmer_group][Selmer group]], '/constructed from an [[https://en.wikipedia.org/wiki/Isogeny][isogeny]] of [[https://en.wikipedia.org/wiki/Abelian_variety][abelian varieties]]/'.
 
 It is easy to do machine-specific configuration for programs like Emacs whose configuration files are written in Turing-complete languages. The same cannot be said for the multitude of programs whose configuration is written in simple data formats: /[[https://en.wikipedia.org/wiki/TOML][toml]]/, /json/, /yaml/, and many others.
@@ -7,22 +9,33 @@ It is easy to do machine-specific configuration for programs like Emacs whose co
 /Isogeny/ allows you to make all configuration dynamic.
 
 ** Usage
+*** Prerequisites
+Isogeny is a Clojure script that requires [[https://github.com/babashka/babashka#installation][babashka]]^{[[https://aur.archlinux.org/packages/babashka-bin/][AUR]]} to run
 
-Isogeny takes a template, an [[https://github.com/edn-format/edn][EDN]] context file, and generates an output file.
-
+*** Basic usage
+Clone the repository:
 #+begin_src sh
-isogeny.clj -t TEMPLATE -c CONTEXT -o OUTPUT
+git clone https://github.com/EducatedAlmost/isogeny.git
+cd isogeny
+chmod +x isogeny.clj # check the source
 #+end_src
 
-Replace all varying values in a configuration file with ~{{ variable }}~, in what will become the template. Move the value to the context file, ~{:variable value}~. Point the output to the location of the original file. The context will be different for each machine or user profile.
+Isogeny takes a /template/ of the configuration, a /context/ containing the values to be used, and produces an /output/ that is then used as a configuration file on the machine.
+#+begin_src sh
+./isogeny.clj -t TEMPLATE -c CONTEXT -o OUTPUT
+#+end_src
+
+Isogeny uses the [[https://github.com/yogthos/Selmer][Selmer]] templating system. To use it, replace anything you wish to be dynamic with ~{{ variable }}~. The context is an [[https://github.com/edn-format/edn][EDN]] file that contains the values for a particular machine, like ~{:variable "value"}~, and generally there will be one per config file per machine.
+
+For more information about creating templates, see the comprehensive [[https://github.com/yogthos/Selmer][Selmer documentation]].
 
 Template:
 #+begin_src
 ...
 Font size: {{ font.size }}
 Font family: {{ font.family }}
-Hosts: {% for host in hosts %}
-  Host: {{ host }} {% endfor %}
+Ports: {% for port in ports %}
+  Port: {{ port }} {% endfor %}
 ...
 #+end_src
 
@@ -30,7 +43,7 @@ Context:
 #+begin_src clojure
 {:font {:size 12
         :family "Fira mono"}
- :hosts ["127.0.0.1" "localhost"]}
+ :ports [3334 3335]}
 #+end_src
 
 Output:
@@ -38,150 +51,134 @@ Output:
 ...
 Font size: 12
 Font family: Fira mono
-Hosts:
-  Host: 127.0.0.1
-  Host: localhost
+Ports:
+  Port: 3334
+  Port: 3335
 ...
 #+end_src
 
-For another machine the context might have a different font size, and another host. The correct context file can be picked automatically if their names are parameterised with environment variables, such as:
-
+For another machine, the context will be different. The correct context can be dynamically loaded from a shell like so:
 #+begin_src
-i3wm.$HOSTNAME.edn     ; => i3wm.hermes.edn
-vim.$(uname).$USER.edn ; => vim.Darwin.simon.edn
+config.$(uname).$(uname -n).edn
+# => config.Linux.hermes.edn
+# => config.Darwin.simon.edn
 #+end_src
 
-*** Calling Isogeny
-
-Isogeny is designed to be called on startup by the login shell. In =~/.profile=, =~/.bash_profile=, or whatever you use to configure your [[https://wiki.archlinux.org/title/Command-line_shell#Login_shell][login shell]], add:
-
+Isogeny is designed to be alled on startup when the login shell sources ~~/.bash_profile~, ~~/.profile~, or ~~/.zprofile~, but can also be called from any shell.
 #+begin_src sh
-isogeny.clj -t ~/.config/example/exp.template.conf \
-    -c ~/.config/example/exp.$HOSTNAME.edn \
-    -d ~/.config/example/exp.default.edn \
-    -o ~/.config/example/exp.conf
+./isogeny.clj -t ~/.config/example/config.template \
+    -c ~/.config/example/config.$(uname -n).edn \
+    -t ~/.config/example/config.template \
+    -t ~/.config/example/config.template \
 #+end_src
 
-Making substitutions for whichever program you wish to compile. Example files can be tried from the [[file:examples/]] directory. Try calling ~examples/foo.sh~:
-
+Example files can be found in the file:examples/ directory.
 #+begin_src sh
-#!/usr/bin/env bash
-
-./isogeny.clj -t examples/foo.template \
-    -c examples/foo.specific.edn \
-    -d examples/foo.default.edn \
-    -C '{:override? true}' \
-    -a examples/custom-tag.clj \
-    -o examples/foo.out \
-    --strict \
-    --verbose
+./isogeny.clj -t ./examples/foo.template \
+    -c ./examples/foo.specific.edn \
+    -o ./examples/foo.out \
 #+end_src
 
-It should throw an exception because there is a missing tag. Try removing ~--strict~ to suppress the exception, and removing the output option to output to ~STDOUT~.
+**** Getting started
+Isogeny can help you get started. Provide an existing config file with ~--prepare <file>~ and Isogeny will generate a template and context to use /without deleting the original/.
+#+begin_src sh
+./isogeny.clj --prepare config --verbose
+# => config.template, config.$(uname -n).edn
+#+end_src
+
+*** Defaults
+If the /template/ or /context/ are omitted, they are read from ~STDIN~, if /output/ is omitted it is printed to ~STDOUT~.
+
+*** Further usage
+**** Environment variables
+Isogeny provides two means of rendering the values of environment variables in templates, a custom ~env~ tag used in the template like ~{% env "PATH" %}~, or in the config ~{:path (System/getenv "PATH")}~.
+
+**** Default contexts
+It is always a good idea to have a /default context that can be fallen back on in the case that the specific context cannot be found.
+#+begin_src sh
+./isogeny.clj -t ./examples/foo.template \
+    -c ./examples/foo.$(uname -n).edn \ # this file doesn\'t exist
+    -d ./examples/foo.default.edn \ # so this context is used instead
+    -o ./examples/foo.out \
+#+end_src
 
 **** Multi-template mode
+Isogeny can render multiple templates at once using /multi-template/ mode. It doesn't require the output to be specified, because it just removes the final file extension. The context file must contain the context needed for every template.
+#+begin_src sh
+./isogeny.clj --multi-template \
+    -c ./examples/foo.specific.edn \
+    -o ./examples/foo.out \
+    ./examples/foo.template ./examples/bar.template
+#+end_src
 
-Alternatively, Isogeny can render multiple templates at once in the same context using the ~-T~ flag and passing the templates as arguments. The name of the output of each template will automatically be calculated by removing its extension.
-
-#+begin_src
-./isogeny.clj -T \
-    -c examples/foo.specific.edn \
-    -d examples/foo.default.edn \
+**** Context overrides
+Values in the context file can be overridden on the command line.
+#+begin_src sh
+./isogeny.clj -t ./examples/foo.template \
+    -c ./examples.foo.specific.edn \
     -C '{:override? true}' \
-    -a examples/custom-tag.clj \
-    --verbose \
-    examples/foo.template examples/bar.template
+    -o ./examples/foo.out
 #+end_src
 
-This produces the output files ~examples/foo~ and ~examples/bar~. Note that only a single context is used, so it must contain all the values to fill every template.
-
-*** Options
-
-- if the option is missing, the template will be read from ~STDIN~.
-- the context can be provided from ~STDIN~ using ~-c -~ .
-- context can be provided from the command line using ~-C "{:foo \\"bar\\"}"~.
-- if the context file cannot be read, the default context can be specified with ~-d~.
-- if no output is provided it will print to ~STDOUT~.
-- custom Selmer tags can be provided in a Clojure file, ~-a <file>~.
-- if you wish to throw an exception when context is missing a value in the template, use ~--strict~.
-- the program can give more verbose output, ~-v~, or print ~--help~.
-
-*** ~HOSTNAME~ or ~HOST~?
-
-~HOSTNAME~ is a variable available in Bash, whilst ~HOST~ is available in Zsh; if you find that one is empty, try the other.
-
-*** ~PATH~?
-
-If you are having trouble running ~isogeny.clj~, check that your ~PATH~ is being set before Isogeny is called, otherwise provide a fully-qualified path, ~/usr/bin/isogen/usr/bin/isogeny~.
-
-*** Deep-merge contexts
-
-Using a context string to override settings in the context file can sometimes overwrite settings that it shouldn't.
-
+***** Deep merge
+By default, the context override uses a shallow merge.
 #+begin_src clojure
-{:foo "foo" :bar {:two 2}} ; => provided in the context file
-{:bar {:three 3}} ; => provided in the context string
-{:foo "foo" :bar {:three 3}} ; => the merged context that will be used
+(merge {:foo {:bar "bar"}}
+       {:foo {:qux "qux"}})
+; => {:foo {:qux "qux"}}
 #+end_src
 
-As you can see, the ~(:bar :two)~ entry was lost during the merge. To prevent this the ~--deep-merge~ option can be used which recursively uses a merge when combining maps.
-
+By passing ~--deep-merge~, the maps are recursively merged instead.
 #+begin_src clojure
-{:foo "foo" :bar {:two 2}} ; => provided in the context file
-{:bar {:three 3}} ; => provided in the context string
-{:foo "foo" :bar {:two 2 :three 3}} ; => the merged context that will be used
+(ae.isogeny/deep-merge
+ {:foo {:bar "bar"}}
+ {:foo {:qux "qux"}})
+; => {:foo {:bar "bar" :qux "qux"}}
 #+end_src
 
-These nested values can easily be used in Selmer templates using the ~{{ bar.two }}~ syntax.
-
-** Creating a template
-
-Isogeny uses Selmer to render templates. See the [[https://github.com/yogthos/Selmer][Selmer repo]] for comprehensive documentation.
-
-Selmer uses ~{{ foo }}~ to substitute variables, and ~{% bar %}~ for tags, used like ~{% tag arg-1 arg-2 %}~:
-
-- ~include~
-- ~block~
-- ~cycle~
-- ~debug~
-- ~extends~
-- ~if~ / ~else~ / ~endif~
-- ~ifequal~
-- ~ifunequal~
-- ~for~ / ~endfor~
-- ~sum~
-- ~now~
-- ~comment~
-- ~firstof~
-- ~safe~
-- ~script~
-- ~style~
-- ~verbatim~
-- ~with~
-
-*** Environment variables
-
-Isogeny supports two means of using environment variables, putting them in the template or the EDN file.
-
-Isogeny has a custom ~env~ tag for its templates:
-#+begin_src
-{% env "PATH" %}
+#+begin_src sh
+./isogeny.clj -t ./examples/foo.template \
+    -c ./examples.foo.specific.edn \
+    -C '{:override? true}' \
+    --deep-merge \
+    -o ./examples/foo.out
 #+end_src
 
-Environment variables can also be read when the EDN is evaluated:
-#+begin_src clojure
-{:path (System/getenv "PATH")}
-;; then used as {{ path }} in the template
+**** Additional Selmer tags
+As well as variables, Selmer contains a number of tags, such as ~includes~, ~extends~, ~for~, and ~if~. Isogeny provides ~env~, and allows one to define additional tags by providing a file of tag definitions; see file:examples/custom-tag.clj and [[https://github.com/yogthos/Selmer#tags][Selmer#Tags]] for examples.
+#+begin_src sh
+./isogeny.clj -t ./examples/foo.template \
+    -c ./examples.foo.specific.edn \
+    -a ./examples/custom-tag.clj \
+    -o ./examples/foo.out
 #+end_src
 
-*** Custom tags
+**** Safe
+By passing the ~--safe~, there's a 99% chance that Isogeny won't overwrite any extant files. It is not a default because in the expected use case Isogeny will be overwriting extant configuration files.
 
-Users may supply additional tags can be supplied in a Clojure file with the ~-a --add-tags <file>~ option.
+**** Strict
+By default, Isogeny will ignore when the template contains variables that are not defined in the context. To make it throw exceptions, it is recommended to use ~--strict~.
 
-#+begin_src clojure
-(selmer.parser/add-tag!
- :custom
- (fn [args context-map]
-   (str "Custom tag replacement of: " (first args))))
-;; {% custom foo %} => "Custom tag replacement of: foo"
+** How I use it
+All of [[https://github.com/EducatedAlmost/.dotfiles.git][my config files]] are kept in source control. I use [[https://www.gnu.org/software/stow/][GNU Stow]] to reliably deploy them. The files that Isogeny uses are kept inside ~~/.dotfiles~ and Isogeny is run on every startup in ~~/.bash_profile~:
+
+#+begin_src sh
+~/src/isogeny/isogeny.clj \
+    -t $DOT/sway/.config/sway/config.template \
+    -c $DOT/sway/.config/sway/config.$(uname -n).edn \
+    -d $DOT/sway/.config/sway/config.default.edn \
+    -o $DOT/sway/.config/sway/config \
+    --strict --verbose
+
+~/src/isogeny/isogeny.clj \
+    -t $DOT/alacritty/.config/alacritty/alacritty.yml.template \
+    -c $DOT/alacritty/.config/alacritty/alacritty.yml.$(uname -n).edn \
+    -d $DOT/alacritty/.config/alacritty/alacritty.yml.default.edn \
+    -o $DOT/alacritty/.config/alacritty/alacritty.yml \
+    --strict --verbose
 #+end_src
+
+** Writing templates
+Variables: ~{{ variable }}~
+Tags: ~{% tag %}~
+Example tags: ~include~ , ~block~, ~cycle~, ~debug~, ~extends~, ~if~ / ~else~ / ~endif~, ~ifequal~, ~ifunequal~, ~for~ / ~endfor~, ~sum~, ~now~, ~comment~, ~firstof~, ~safe~, ~script~, ~style~, ~verbatim~, ~with~
