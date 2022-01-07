@@ -64,7 +64,7 @@ config.$(uname).$(uname -n).edn
 # => config.Darwin.simon.edn
 #+end_src
 
-Isogeny is designed to be alled on startup when the login shell sources ~~/.bash_profile~, ~~/.profile~, or ~~/.zprofile~, but can also be called from any shell.
+Isogeny is designed to be alled on startup when the login shell sources =~/.bash_profile=, =~/.profile=, or =~/.zprofile=, but can also be called from any shell.
 #+begin_src sh
 ./isogeny.clj -t ~/.config/example/config.template \
     -c ~/.config/example/config.$(uname -n).edn \
@@ -160,7 +160,7 @@ By passing the ~--safe~, there's a 99% chance that Isogeny won't overwrite any e
 By default, Isogeny will ignore when the template contains variables that are not defined in the context. To make it throw exceptions, it is recommended to use ~--strict~.
 
 ** How I use it
-All of [[https://github.com/EducatedAlmost/.dotfiles.git][my config files]] are kept in source control. I use [[https://www.gnu.org/software/stow/][GNU Stow]] to reliably deploy them. The files that Isogeny uses are kept inside ~~/.dotfiles~ and Isogeny is run on every startup in ~~/.bash_profile~:
+All of [[https://github.com/EducatedAlmost/.dotfiles.git][my config files]] are kept in source control. I use [[https://www.gnu.org/software/stow/][GNU Stow]] to reliably deploy them. The files that Isogeny uses are kept inside =~/.dotfiles= and Isogeny is run on every startup in =~/.bash_profile=:
 
 #+begin_src sh
 ~/src/isogeny/isogeny.clj \
