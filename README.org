@@ -180,5 +180,7 @@ All of [[https://github.com/EducatedAlmost/.dotfiles.git][my config files]] are 
 
 ** Writing templates
 Variables: ~{{ variable }}~
+
 Tags: ~{% tag %}~
+
 Example tags: ~include~ , ~block~, ~cycle~, ~debug~, ~extends~, ~if~ / ~else~ / ~endif~, ~ifequal~, ~ifunequal~, ~for~ / ~endfor~, ~sum~, ~now~, ~comment~, ~firstof~, ~safe~, ~script~, ~style~, ~verbatim~, ~with~
