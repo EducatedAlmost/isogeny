@@ -93,6 +93,14 @@ If the /template/ or /context/ are omitted, they are read from ~STDIN~, if /outp
 **** Environment variables
 Isogeny provides two means of rendering the values of environment variables in templates, a custom ~env~ tag used in the template like ~{% env "PATH" %}~, or in the config ~{:path (System/getenv "PATH")}~.
 
+**** Nested values
+Values that are nested within the context can easily be used in the template using the common ~foo.bar~ syntax.
+#+begin_src
+{{ foo.bar }}
+{:foo {:bar "qux"}}
+=> "qux"
+#+end_src
+
 **** Default contexts
 It is always a good idea to have a /default context that can be fallen back on in the case that the specific context cannot be found.
 #+begin_src sh
