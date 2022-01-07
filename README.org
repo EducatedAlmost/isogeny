@@ -192,3 +192,6 @@ Variables: ~{{ variable }}~
 Tags: ~{% tag %}~
 
 Example tags: ~include~ , ~block~, ~cycle~, ~debug~, ~extends~, ~if~ / ~else~ / ~endif~, ~ifequal~, ~ifunequal~, ~for~ / ~endfor~, ~sum~, ~now~, ~comment~, ~firstof~, ~safe~, ~script~, ~style~, ~verbatim~, ~with~
+
+** Acknowledgements
+Isogeny is deeply indebted to the works of [[https://github.com/babashka/babashka][Babashka]] and [[https://github.com/yogthos/Selmer][Selmer]].
