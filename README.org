@@ -10,7 +10,7 @@ It is easy to do machine-specific configuration for programs like Emacs whose co
 
 ** Usage
 *** Prerequisites
-Isogeny is a Clojure script that requires [[https://github.com/babashka/babashka#installation][babashka]]^{[[https://aur.archlinux.org/packages/babashka-bin/][AUR]]} to run
+Isogeny is a Clojure script that requires [[https://github.com/babashka/babashka#installation][Babashka]]^{[[https://aur.archlinux.org/packages/babashka-bin/][AUR]]} to run, and as long as Babashka is installed, Isogeny can be treated as a simple executable. It has been built for Linux, should run on MacOS, and I have no idea about Windows or WSL.
 
 *** Basic usage
 Clone the repository:
@@ -28,6 +28,15 @@ Isogeny takes a /template/ of the configuration, a /context/ containing the valu
 Isogeny uses the [[https://github.com/yogthos/Selmer][Selmer]] templating system. To use it, replace anything you wish to be dynamic with ~{{ variable }}~. The context is an [[https://github.com/edn-format/edn][EDN]] file that contains the values for a particular machine, like ~{:variable "value"}~, and generally there will be one per config file per machine.
 
 For more information about creating templates, see the comprehensive [[https://github.com/yogthos/Selmer][Selmer documentation]].
+
+**** Getting started
+Isogeny can help you get started. Provide an existing config file with ~--prepare <file>~ and Isogeny will generate a template and context to use /without deleting the original/.
+#+begin_src sh
+./isogeny.clj --prepare config --verbose
+# => config.template, config.$(uname -n).edn
+#+end_src
+
+Customise the template and context to fit your needs.
 
 Template:
 #+begin_src
@@ -77,13 +86,6 @@ Example files can be found in the file:examples/ directory.
 ./isogeny.clj -t ./examples/foo.template \
     -c ./examples/foo.specific.edn \
     -o ./examples/foo.out \
-#+end_src
-
-**** Getting started
-Isogeny can help you get started. Provide an existing config file with ~--prepare <file>~ and Isogeny will generate a template and context to use /without deleting the original/.
-#+begin_src sh
-./isogeny.clj --prepare config --verbose
-# => config.template, config.$(uname -n).edn
 #+end_src
 
 *** Defaults
