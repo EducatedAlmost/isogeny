@@ -1,0 +1,18 @@
+#!/usr/bin/env bb
+;; -*- mode: clojure -*-
+
+(require '[babashka.classpath :as cp]
+         '[babashka.fs :as fs]
+         '[clojure.java.shell :as shell])
+
+(as-> *file* $
+  (shell/sh "readlink" "-f" $)
+  (:out $)
+  (fs/parent $)
+  (fs/file $ "src")
+  (str $)
+  (cp/add-classpath $))
+
+(require '[ae.isogeny :as iso])
+(apply iso/-main *command-line-args*)
+(System/exit 0)

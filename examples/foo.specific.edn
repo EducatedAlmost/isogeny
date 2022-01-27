@@ -1,4 +1,12 @@
-{:path (System/getenv "PATH")
- :specific? true
+{:specific? true
+ :user (System/getenv "USER")
  :override? false
- :bar true}
+ :merged {:base true
+          :deep false}
+ :json? false
+ :bar {:specific? true
+       :user (System/getenv "USER")
+       :override? false
+       :merged {:base true
+                :deep false}
+       :json? false}}

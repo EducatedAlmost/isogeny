@@ -1,6 +1,11 @@
-Specific configuration: {{ specific? }}
-Environment variable: {% env USER %}
-EDN environment variable: {{ path }}
-Missing: {{ missing }}
-Custom tag active?: {% custom %}
-Override: {{ override? }}
+This is an example configuration template.
+Name: foo
+Specific configuration: {{ specific? }} if -c exists
+Environment variable: {% env USER %} = USER
+EDN environment variable: {{ user }} = USER
+Missing: <{{ missing }}> throws if --strict
+Custom tag active?: {% custom %} throws unless -a
+Override: {{ override? }} if -C
+Base: {{ merged.base }} unless shallow-merged
+Merged: {{ merged.deep }} if deep-merged
+JSON: {{ json? }} if --json
