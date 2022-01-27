@@ -1,2 +1,6 @@
-{:path (System/getenv "PATH")
- :specific? false}
+{:specific? false
+ :user (System/getenv "USER")
+ :override? false
+ :merged {:base true
+          :deep false}
+ :json? false}
