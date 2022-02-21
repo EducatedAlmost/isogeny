@@ -71,7 +71,7 @@ OUTPUT: output location")
     (println "Render options:") (println render-opts-summary) (println)))
 
 (defn version []
-  (println "Isogeny 3.0"))
+  (println "Isogeny 3.1"))
 
 (defn throw-on-missing
   "Causes an exception to be thrown when a missing value is encountered."
