@@ -25,24 +25,25 @@ CONTEXT: EDN context map
 OUTPUT: output location")
 
 (def general-opts
-  [["-h" "--help" "Display usage information." :id :+help?]
-   ["-V" "--version" "Print the version of Isogeny." :id :+version?]
-   ["-v" "--verbose" "Print execution details." :id :+verbose?]
-   [nil, "--strict" "Throw an exception for missing values." :id :+strict?]
-   [nil, "--safe" "Do not alter existing files." :id :+safe?]
-   [nil, "--dry-run" "Run without writing anything." :id :+dry-run?]])
+  [["-h" "--help" "Display usage information." :id ::+help?]
+   ["-V" "--version" "Print the version of Isogeny." :id ::+version?]
+   ["-v" "--verbose" "Print execution details." :id ::+verbose?]
+   [nil, "--strict" "Throw an exception for missing values." :id ::+strict?]
+   [nil, "--safe" "Do not alter existing files." :id ::+safe?]
+   [nil, "--dry-run" "Run without writing anything." :id ::+dry-run?]])
 
 (def render-opts
   [["-t" "--template TEMPLATE" "Templates to be rendered."
-    :id :template-files :multi true :default [] :update-fn conj]
-   ["-c" "--context CONTEXT" "EDN context used to render template." :id :context-file :default "-"]
-   ["-d" "--context-default CONTEXT" "Default EDN context to fall back on." :id :context-default-file]
-   ["-C" "--context-override STRING" "Provide context override."]
-   ["-j" "--json" "Parse JSON context." :id :json?]
-   ["-a" "--add-tags TAGS_FILE" "File containing additional tag definitions."]
-   [nil, "--deep-merge" "Deep-merge the context override." :id :deep-merge?]
+    :id ::template-files :multi true :default [] :update-fn conj]
+   ["-c" "--context CONTEXT" "EDN context used to render template." :id ::context-file :default "-"]
+   ["-d" "--context-default CONTEXT" "Default EDN context to fall back on." :id ::context-default-file]
+   ["-C" "--context-override STRING" "Provide context override." :id ::context-override]
+   ["-j" "--json" "Parse JSON context." :id ::json?]
+   ["-a" "--add-tags TAGS_FILE" "File containing additional tag definitions." :id ::add-tags]
+   [nil, "--deep-merge" "Deep-merge the context override." :id ::deep-merge?]
    ["-o" "--output OUTPUT" "Locations for output."
-    :id :outputs :multi true :default [] :update-fn conj]])
+    :id ::outputs :multi true :default [] :update-fn conj]
+   [nil "--standard" "Assume outputs to be template minus extension." :id ::standard?]])
 
 (def cli-opts
   (concat general-opts render-opts))
@@ -87,7 +88,7 @@ OUTPUT: output location")
          (log/error "Exception thrown loading additional tags:")
          (throw e))))
 
-(defn setup [{:keys [+help? +version? +verbose? +strict? +safe? +dry-run?] :as options}]
+(defn setup [{::keys [+help? +version? +verbose? +strict? +safe? +dry-run?] :as options}]
   (when +help? (help) (exit))
   (when +version? (version) (exit))
   (when +verbose? (swap! verbose? (constantly true)) (log/info "Options:" (pp-str options)))
@@ -97,7 +98,7 @@ OUTPUT: output location")
 
 (defn try-slurp
   ([file] (try-slurp file nil))
-  ([file {:keys [throw?]}]
+  ([file {::keys [throw?]}]
    (try (when @verbose? (log/info "Reading:" file))
         (slurp file)
         (catch Exception e
@@ -121,7 +122,7 @@ OUTPUT: output location")
   ([context context-default] (->context context context-default nil nil))
   ([context context-default context-override]
    (->context context context-default context-override nil))
-  ([context context-default context-override {:keys [json? deep-merge?]}]
+  ([context context-default context-override {::keys [json? deep-merge?]}]
    (let [parse-fn (if json? #(json/parse-string % true) read-string)
          merge-fn (if deep-merge? deep-merge merge)
          override (when (some? context-override) (parse-fn context-override))]
@@ -146,17 +147,20 @@ OUTPUT: output location")
                output))
            outputs)))
 
+(defn ->standard [template-files]
+  (map fs/strip-ext template-files))
+
 (defn render [templates context context-default options]
-  (let [{:keys [context-override outputs]} options
+  (let [{::keys [template-files context-override outputs standard?]} options
         merged-context (->context context context-default context-override options)
-        fixed-outputs (->outputs outputs)]
+        fixed-outputs (if standard? (->standard template-files) (->outputs outputs))]
     (->> templates
          (map #(s.parser/render % merged-context))
          (map (fn [f c] {:file f :content c}) fixed-outputs))))
 
 (defn write! [outputs]
   (when @verbose? (log/info "Writing:" (count outputs) "files" (map :file outputs)))
-  (doall (map (fn [{:keys [file content]}]
+  (doall (map (fn [{::keys [file content]}]
                 (when @verbose? (log/info "Writing to file:" file))
                 (if @dry-run?
                   (log/warn "DRY-RUN, not writing to:" file)
@@ -165,7 +169,7 @@ OUTPUT: output location")
                     (spit (or file *out*) content))))
               outputs)))
 
-(defn render! [_ {:keys [template-files context-file context-default-file add-tags] :as options}]
+(defn render! [_ {::keys [template-files context-file context-default-file add-tags] :as options}]
   (when @verbose? (log/info "Rendering:" (pp-str options)))
   (let [templates (doall (map #(-> % ->input (try-slurp {:throw? true})) template-files))
         context (try-slurp (->input context-file) {:throw? false})
@@ -177,7 +181,7 @@ OUTPUT: output location")
 
 (defn prepare
   ([f] (prepare f true))
-  ([{:keys [file content]} resolve-host?]
+  ([{::keys [file content]} resolve-host?]
    (let [template (str file ".template")
          host (if-not resolve-host? "HOST"
                       (or (.. java.net.InetAddress getLocalHost getHostName) "HOST"))
@@ -198,7 +202,7 @@ OUTPUT: output location")
   "I don't do a whole lot ... yet."
   [& args]
   (let [{[subcommand & subargs :as arguments] :arguments
-         :keys [options errors]} (cli/parse-opts args cli-opts)]
+         :keys [options errors] :as x} (cli/parse-opts args cli-opts)]
     (when errors (log/error "Errors parsing CLI arguments:" errors) (exit 1))
     (setup options)
     (when @verbose? (log/info "Arguments:" arguments))

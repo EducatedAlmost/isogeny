@@ -155,6 +155,7 @@ Render options:
   -a, --add-tags TAGS_FILE           File containing additional tag definitions.
       --deep-merge                   Deep-merge the context override.
   -o, --output OUTPUT            []  Locations for output.
+  --standard                         Assume outputs to be template minus extension.
 #+end_src
 
 *** ~STDIN~ and ~STDOUT~
@@ -162,6 +163,14 @@ To read from ~STDIN~,  ~-~ can be used as the template or context. The same can 
 
 #+begin_src sh
 isogeny -t - -c ~/.config/example/config.$(uname -n).edn
+#+end_src
+
+*** Standard mode
+Isogeny, in standard mode, will ignore any outputs provided, and instead output the rendered file to the path of the template, minus its extension.
+#+begin_src sh
+isogeny -t ./examples/foo.template \ # the .template extension will be removed
+    -c ./examples/foo.specific.edn \
+    --standard # the output will be ./examples/foo without needing to be specified
 #+end_src
 
 *** Default contexts
