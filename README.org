@@ -296,5 +296,13 @@ Tags: ~{% tag %}~
 
 Example tags: ~include~ , ~block~, ~cycle~, ~debug~, ~extends~, ~if~ / ~else~ / ~endif~, ~ifequal~, ~ifunequal~, ~for~ / ~endfor~, ~sum~, ~now~, ~comment~, ~firstof~, ~safe~, ~script~, ~style~, ~verbatim~, ~with~
 
+** Deploy
+Isogeny also provides a thin wrapper around GNU Stow, allowing one to easily deploy the generated files. To see how to organise ones file to use Isogeny deploy and Stow, see its [[https://www.gnu.org/software/stow/manual/html_node/index.html][documentation]]. Having done so, and having ~stow~ available on the system:
+#+begin_src sh
+isogeny deploy --deploy-dir ~/.dotfiles alacritty clojure emacs
+#+end_src
+
+This can be used after rendering the configuration, to ensure that the rendered configuration is actually used by the system.
+
 ** Acknowledgements
 Isogeny is deeply indebted to the works of [[https://github.com/babashka/babashka][Babashka]] and [[https://github.com/yogthos/Selmer][Selmer]].

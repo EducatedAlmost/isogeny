@@ -5,6 +5,7 @@
   (:gen-class)
   (:require
    [babashka.fs :as fs]
+   [clojure.java.shell :as shell]
    [cheshire.core :as json]
    [clojure.pprint :as pp]
    [clojure.string :as str]
@@ -45,8 +46,11 @@ OUTPUT: output location")
     :id ::outputs :multi true :default [] :update-fn conj]
    [nil "--standard" "Assume outputs to be template minus extension." :id ::standard?]])
 
+(def deploy-opts
+  [[nil "--deploy-dir DIR" "The root dir of config files, --dir or -d in GNU Stow." :id ::deploy-dir]])
+
 (def cli-opts
-  (concat general-opts render-opts))
+  (concat general-opts render-opts deploy-opts))
 
 ;; Add the {% env %} tag to read environment variables.
 (selmer.parser/add-tag!
@@ -198,6 +202,19 @@ OUTPUT: output location")
        (apply concat)
        write!))
 
+(defn deploy! [args {::keys [deploy-dir]}]
+  (cond
+    @safe? (log/warn "Deploy cannot be run safely.")
+    @dry-run? (log/info "Not deploying anything due to --dry-run.")
+    :else (let [dir (if (some? deploy-dir) ["--dir" deploy-dir] [])
+                v (if @verbose? ["-vv"] [])
+                {:keys [exit out err] :as ret} (apply shell/sh "stow" (concat v dir args))]
+            (when @verbose?
+              (log/info "Stow return:" ret)
+              (doall (for [line (str/split out #"\n")] (when-not (empty? line) (log/info line)))))
+            (when (or (< 0 exit) @verbose?)
+              (doall (for [line (str/split err #"\n")] (log/info line)))))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
@@ -209,4 +226,5 @@ OUTPUT: output location")
     (case subcommand
       "render" (render! subargs options)
       "prepare" (prepare! subargs options)
+      "deploy" (deploy! subargs options)
       (render! args options))))
