@@ -39,14 +39,21 @@
           actual (sut/->outputs [o])]
       (t/is (= expected actual)))))
 
+(t/deftest ->standard-test
+  (t/testing ""
+    (let [template-files ["file.foo" "other.file.bar"]
+          expected ["file" "other.file"]
+          actual (sut/->standard template-files)]
+      (t/is (= expected actual)))))
+
 (t/deftest render-test
   (t/testing "The context will be preferred to its default."
     (let [templates ["{{foo}}"]
           context (str {:foo "bar"})
           context-default (str {:foo "baz"})
           output "output.txt"
-          options {:outputs [output]}
-          expected [{:file output :content "bar"}]
+          options {::sut/outputs [output]}
+          expected [{::sut/file output ::sut/content "bar"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "Default context will be used if the context is nil."
@@ -54,8 +61,8 @@
           context nil
           context-default (str {:foo "bar"})
           output "output.txt"
-          options {:outputs [output]}
-          expected [{:file output :content "bar"}]
+          options {::sut/outputs [output]}
+          expected [{::sut/file output ::sut/content "bar"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "A present context can be overridden."
@@ -63,8 +70,8 @@
           context (str {:foo "baz" :fee "qux"})
           context-default nil
           output "output.txt"
-          options {:outputs [output] :context-override (str {:foo "bar"})}
-          expected [{:file output :content "bar\nqux"}]
+          options {::sut/outputs [output] ::sut/context-override (str {:foo "bar"})}
+          expected [{::sut/file output ::sut/content "bar\nqux"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "A nil context can be overridden."
@@ -72,8 +79,8 @@
           context nil
           context-default nil
           output "output.txt"
-          options {:outputs [output] :context-override (str {:foo "bar"})}
-          expected [{:file output :content "bar"}]
+          options {::sut/outputs [output] ::sut/context-override (str {:foo "bar"})}
+          expected [{::sut/file output ::sut/content "bar"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "Interior values can be used in the template."
@@ -81,8 +88,8 @@
           context (str {:foo {:bar "baz"}})
           context-default nil
           output "output.txt"
-          options {:outputs [output]}
-          expected [{:file output :content "baz"}]
+          options {::sut/outputs [output]}
+          expected [{::sut/file output ::sut/content "baz"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "JSON can be used to provide context."
@@ -90,8 +97,8 @@
           context (json/generate-string {:foo "baz"})
           context-default nil
           output "output.txt"
-          options {:outputs [output] :json? true}
-          expected [{:file output :content "baz"}]
+          options {::sut/outputs [output] ::sut/json? true}
+          expected [{::sut/file output ::sut/content "baz"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "Contexts can be deep-merged."
@@ -99,10 +106,10 @@
           context (str {:foo {:one "one" :two "two"}})
           context-default nil
           output "output.txt"
-          options {:outputs [output]
-                   :context-override (str {:foo {:two "two" :three "three"}})
-                   :deep-merge? true}
-          expected [{:file output :content "one two three"}]
+          options {::sut/outputs [output]
+                   ::sut/context-override (str {:foo {:two "two" :three "three"}})
+                   ::sut/deep-merge? true}
+          expected [{::sut/file output ::sut/content "one two three"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual))))
   (t/testing "Context will be evaled before substitution."
@@ -110,15 +117,28 @@
           context (str `{:foo (+ 1 2) :bar "baz"})
           context-default nil
           output "output.txt"
-          options {:outputs [output] :deep-merge? true}
-          expected [{:file output :content "3\nbaz"}]
+          options {::sut/outputs [output] ::sut/deep-merge? true}
+          expected [{::sut/file output ::sut/content "3\nbaz"}]
+          actual (sut/render templates context context-default options)]
+      (t/is (= expected actual))))
+  (t/testing "Standard option will override outputs."
+    (let [template-files ["output.template"]
+          templates ["{{foo}}"]
+          context (str {:foo "bar"})
+          context-default nil
+          output "output"
+          options {::sut/template-files template-files
+                   ::sut/outputs ["incorrect.file"]
+                   ::sut/deep-merge? true
+                   ::sut/standard? true}
+          expected [{::sut/file output ::sut/content "bar"}]
           actual (sut/render templates context context-default options)]
       (t/is (= expected actual)))))
 
 (t/deftest prepare-test
   (t/testing "Config files may be prepared for use with Isogeny."
     (let [file "config" content "content"
-          expected [{:file "config.template" :content content}
-                    {:file "config.HOST.edn" :content "{}"}]
-          actual (sut/prepare {:file file :content content} false)]
+          expected [{::sut/file "config.template" ::sut/content content}
+                    {::sut/file "config.HOST.edn" ::sut/content "{}"}]
+          actual (sut/prepare {::sut/file file ::sut/content content} false)]
       (t/is (= expected actual)))))

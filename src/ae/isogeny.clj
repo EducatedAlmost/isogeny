@@ -56,24 +56,24 @@ OUTPUT: output location")
 (selmer.parser/add-tag!
  :env (fn [args _] (System/getenv (first args))))
 
-(defn pp-str [x]
+(defn pp-str! [x]
   (with-out-str (pp/pprint x)))
 
 (defn exit
   ([] (System/exit 0))
   ([n] (System/exit n)))
 
-(defn help []
+(defn help! []
   (let [general-opts-summary (->> general-opts (cli/parse-opts []) :summary)
         render-opts-summary (->> render-opts (cli/parse-opts []) :summary)]
     (println usage "\n")
     (println "General options:") (println general-opts-summary) (println)
     (println "Render options:") (println render-opts-summary) (println)))
 
-(defn version []
-  (println "Isogeny 3.1"))
+(defn version! []
+  (println "Isogeny 3.2"))
 
-(defn throw-on-missing
+(defn throw-on-missing!
   "Causes an exception to be thrown when a missing value is encountered."
   []
   (when @verbose? (log/info "Throwing on missing values."))
@@ -92,16 +92,16 @@ OUTPUT: output location")
          (log/error "Exception thrown loading additional tags:")
          (throw e))))
 
-(defn setup [{::keys [+help? +version? +verbose? +strict? +safe? +dry-run?] :as options}]
-  (when +help? (help) (exit))
-  (when +version? (version) (exit))
-  (when +verbose? (swap! verbose? (constantly true)) (log/info "Options:" (pp-str options)))
-  (when +strict? (throw-on-missing))
+(defn setup! [{::keys [+help? +version? +verbose? +strict? +safe? +dry-run?] :as options}]
+  (when +help? (help!) (exit))
+  (when +version? (version!) (exit))
+  (when +verbose? (swap! verbose? (constantly true)) (log/info "Options:" (pp-str! options)))
+  (when +strict? (throw-on-missing!))
   (when +safe? (swap! safe? (constantly true)) (when @verbose? (log/info "Enabling safe mode.")))
   (when +dry-run? (swap! dry-run? (constantly true)) (when @verbose? (log/info "Enabling dry-run mode."))))
 
-(defn try-slurp
-  ([file] (try-slurp file nil))
+(defn try-slurp!
+  ([file] (try-slurp! file nil))
   ([file {::keys [throw?]}]
    (try (when @verbose? (log/info "Reading:" file))
         (slurp file)
@@ -160,10 +160,10 @@ OUTPUT: output location")
         fixed-outputs (if standard? (->standard template-files) (->outputs outputs))]
     (->> templates
          (map #(s.parser/render % merged-context))
-         (map (fn [f c] {:file f :content c}) fixed-outputs))))
+         (map (fn [f c] {::file f ::content c}) fixed-outputs))))
 
 (defn write! [outputs]
-  (when @verbose? (log/info "Writing:" (count outputs) "files" (map :file outputs)))
+  (when @verbose? (log/info "Writing:" (count outputs) "files" (map ::file outputs)))
   (doall (map (fn [{::keys [file content]}]
                 (when @verbose? (log/info "Writing to file:" file))
                 (if @dry-run?
@@ -174,10 +174,10 @@ OUTPUT: output location")
               outputs)))
 
 (defn render! [_ {::keys [template-files context-file context-default-file add-tags] :as options}]
-  (when @verbose? (log/info "Rendering:" (pp-str options)))
-  (let [templates (doall (map #(-> % ->input (try-slurp {:throw? true})) template-files))
-        context (try-slurp (->input context-file) {:throw? false})
-        context-default (try-slurp context-default-file {:throw? false})]
+  (when @verbose? (log/info "Rendering:" (pp-str! options)))
+  (let [templates (doall (map #(-> % ->input (try-slurp! {:throw? true})) template-files))
+        context (try-slurp! (->input context-file) {:throw? false})
+        context-default (try-slurp! context-default-file {:throw? false})]
     (when add-tags (add-tags! add-tags))
     (-> templates
         (render context context-default options)
@@ -191,13 +191,13 @@ OUTPUT: output location")
                       (or (.. java.net.InetAddress getLocalHost getHostName) "HOST"))
          context (str/join "." [file host "edn"])]
      (when @verbose? (log/info "File:" file "\nTemplate:" template "\nContext:" context))
-     [{:file template :content content}
-      {:file context :content "{}"}])))
+     [{::file template ::content content}
+      {::file context ::content "{}"}])))
 
 (defn prepare! [configs _]
   (when @verbose? (log/info "Preparing:" configs))
   (->> configs
-       (map (fn [f] {:file f :content (try-slurp f {:throw? true})}))
+       (map (fn [f] {::file f ::content (try-slurp! f {:throw? true})}))
        (map prepare)
        (apply concat)
        write!))
@@ -221,7 +221,7 @@ OUTPUT: output location")
   (let [{[subcommand & subargs :as arguments] :arguments
          :keys [options errors] :as x} (cli/parse-opts args cli-opts)]
     (when errors (log/error "Errors parsing CLI arguments:" errors) (exit 1))
-    (setup options)
+    (setup! options)
     (when @verbose? (log/info "Arguments:" arguments))
     (case subcommand
       "render" (render! subargs options)

@@ -3,7 +3,7 @@
   (:require [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.ae/isogeny)
-(def version "3.1")
+(def version "3.2")
 (def main 'ae.isogeny)
 
 (defn test "Run the tests." [opts]
